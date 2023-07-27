@@ -12,10 +12,20 @@ const App = () => {
     setLoading(true)
     try {
       const response = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}`
+        `https://api.openweathermap.org/data/2.5/forecast/hourly?q=${city}&appid=${apiKey}`
       )
-      if (!response.ok) {
-        throw new Error('Api not working')
+
+      if (response.status === 404) {
+        alert('Enter valid name')
+        setLoading(false)
+        setCity('New Delhi')
+        const fallbackCity = 'New Delhi'
+        const fallbackResponse = await fetch(
+          `https://api.openweathermap.org/data/2.5/weather?q=${fallbackCity}&appid=${apiKey}`
+        )
+        const data = await fallbackResponse.json()
+        setWeather(data)
+        return
       }
       const data = await response.json()
       setWeather(data)
@@ -27,33 +37,35 @@ const App = () => {
   }
 
   return (
-    <div>
+    <div className='container'>
       <form onSubmit={handle}>
-        <input value={city} onChange={(e) => setCity(e.target.value)} />
+        <input
+          value={city}
+          onChange={(e) => setCity(e.target.value)}
+          placeholder='Enter city name'
+        />
         <button type='submit'>See Weather</button>
       </form>
       {loading ? (
-        <div>
-          <img
-            src={
-              'https://media.tenor.com/wpSo-8CrXqUAAAAi/loading-loading-forever.gif'
-            }
-            alt='Loading'
-          />
-        </div>
-      ) : weather ? (
-        <>
-          <h2>Weather in {weather.name}</h2>
-          <p>Temperature: {Math.round(weather.main.temp - 273.15)}°C</p>
-          <p>Temperature max: {Math.round(weather.main.temp_max - 273.15)}°C</p>
-          <p>Temperature min: {Math.round(weather.main.temp_min - 273.15)}°C</p>
-          <p>Humidity: {weather.main.humidity}%</p>
+        <div className='loading'>Loading...</div>
+      ) : weather.name ? (
+        <div className='weather-info'>
+          <h1>Weather in {weather.name}</h1>
+          <h2>{Math.round(weather.main.temp - 273.15)}°C</h2>
+          <p>
+            <span className='small-text'>
+              Temperature Varies from{' '}
+              {Math.round(weather.main.temp_min - 273.15)}°C to{' '}
+              {Math.round(weather.main.temp_max - 273.15)}°C
+            </span>
+          </p>
           <p>Feels Like: {Math.round(weather.main.feels_like - 273.15)}°C</p>
+          <p>Humidity: {weather.main.humidity}%</p>
           <p>Weather: {weather.weather[0].main}</p>
           <p>Description: {weather.weather[0].description}</p>
-        </>
+        </div>
       ) : (
-        <p>No weather data available.</p>
+        <p className='weather-info'>No weather data available.</p>
       )}
     </div>
   )
